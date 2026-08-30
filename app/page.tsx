@@ -591,8 +591,6 @@ export default function Home() {
      border-white/[0.06] pt-6">
             <div className="flex flex-col justify-between gap-3 text-xs text-white/25 sm:flex-row">
               <span>
-           justify-between gap-3 text-xs text-white/25 sm:flex-row">
-              <span>
                 kobo. Compare before you convert.
               </span>
 
