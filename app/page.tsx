@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { assets } from "@/lib/assets";
 import { currencies } from "@/lib/currencies";
@@ -11,7 +11,8 @@ import {
   sortRates,
 } from "@/lib/rates/engine";
 import { getReferenceRate } from "@/lib/rates/reference";
-import { getMockRates, type TradeSide } from "@/lib/rates";
+import type { TradeSide } from "@/lib/rates/types";
+import type { RateQuote } from "@/lib/rates/types";
 
 function formatNumber(value: number, decimals = 2) {
   return new Intl.NumberFormat("en", {
@@ -50,9 +51,74 @@ export default function Home() {
     (item) => item.symbol === asset
   );
 
-  const rates = useMemo(() => {
-    return getMockRates(currency, asset, side);
-  }, [currency, asset, side]);
+  const [rates, setRates] = useState<RateQuote[]>([]);
+const [loadingRates, setLoadingRates] = useState(false);
+const [rateError, setRateError] = useState<string | null>(null);
+
+useEffect(() => {
+  let cancelled = false;
+
+  async function loadRates() {
+    setLoadingRates(true);
+    setRateError(null);
+
+    try {
+      const params = new URLSearchParams({
+        fiat: currency,
+        asset,
+        side,
+        amount: String(
+          Math.max(
+            0,
+            Number(amount.replace(/,/g, "")) || 0
+          )
+        ),
+      });
+
+      const response = await fetch(
+        `/api/rates?${params.toString()}`,
+        {
+          cache: "no-store",
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `Rate request failed: ${response.status}`
+        );
+      }
+
+      const data = await response.json();
+
+      if (!cancelled) {
+        setRates(data.quotes ?? []);
+
+        if (data.errors?.length) {
+          setRateError(data.errors[0]);
+        }
+      }
+    } catch (error) {
+      if (!cancelled) {
+        setRates([]);
+        setRateError(
+          error instanceof Error
+            ? error.message
+            : "Unable to load rates."
+        );
+      }
+    } finally {
+      if (!cancelled) {
+        setLoadingRates(false);
+      }
+    }
+  }
+
+  loadRates();
+
+  return () => {
+    cancelled = true;
+  };
+}, [currency, asset, side, amount]);
 
   const sortedRates = useMemo(() => {
     return sortRates(rates, side);
@@ -277,11 +343,14 @@ export default function Home() {
             </div>
 
             <div className="mt-2 text-xs text-white/30">
-              {bestRate
-                ? `${bestRate.provider} · ${bestRate.providerType}`
-                : "Waiting for providers"}
-            </div>
-          </div>
+  {loadingRates
+    ? "Fetching live rates..."
+    : bestRate
+      ? `${bestRate.provider} · ${bestRate.providerType}`
+      : rateError
+        ? "Provider unavailable"
+        : "Waiting for providers"}
+</div>
 
           <div className="p-6">
             <div className="text-xs text-white/30">
@@ -430,7 +499,17 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="mt-5 overflow-hidden rounded-2xl border border-white/[0.07]">
+        <div {loadingRates && (
+  <div className="border-b border-white/[0.05] px-5 py-3 text-xs text-white/30">
+    Updating rates...
+  </div>
+)}
+
+{rateError && (
+  <div className="border-b border-white/[0.05] px-5 py-3 text-xs text-white/30">
+    {rateError}
+  </div>
+)}
           <div className="hidden grid-cols-[1.5fr_1fr_1fr_1fr_0.7fr_auto] border-b border-white/[0.06] bg-white/[0.02] px-5 py-3 text-xs text-white/25 md:grid">
             <span>Provider</span>
             <span>Type</span>
