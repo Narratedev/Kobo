@@ -350,9 +350,11 @@ useEffect(() => {
       : rateError
         ? "Provider unavailable"
         : "Waiting for providers"}
-</div>
+         </div>
+            </div>
 
-          <div className="p-6">
+              <div className="p-6">
+                
             <div className="text-xs text-white/30">
               Providers tracked
             </div>
@@ -499,11 +501,24 @@ useEffect(() => {
           </div>
         </div>
 
-        <div {loadingRates && (
-  <div className="border-b border-white/[0.05] px-5 py-3 text-xs text-white/30">
-    Updating rates...
-  </div>
-)}
+        <div className="mt-5 overflow-hidden rounded-2xl border border-white/[0.07]">
+
+  {loadingRates && (
+    <div className="border-b border-white/[0.05] px-5 py-3 text-xs text-white/30">
+      Updating rates...
+    </div>
+  )}
+
+  {rateError && (
+    <div className="border-b border-white/[0.05] px-5 py-3 text-xs text-white/30">
+      {rateError}
+    </div>
+  )}
+
+  <div className="hidden grid-cols-[1.5fr_1fr_1fr_1fr_0.7fr_auto] border-b border-white/[0.06] bg-white/[0.02] px-5 py-3 text-xs text-white/25 md:grid">
+  
+    
+  
 
 {rateError && (
   <div className="border-b border-white/[0.05] px-5 py-3 text-xs text-white/30">
